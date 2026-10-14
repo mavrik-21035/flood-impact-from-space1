@@ -1,0 +1,47 @@
+# ── Backend: Python + SNAP GPT ───────────────────────────────────────
+FROM python:3.11-slim-bookworm AS backend
+
+# ── System packages for rasterio / GDAL / SNAP ──────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc g++ libgdal-dev gdal-bin libffi-dev curl unzip default-jre-headless fonts-noto-core \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Install ESA SNAP GPT (headless) ─────────────────────────────────
+# SNAP 14.0.0 installer from the official ESA repository.
+# Verified: https://step.esa.int/main/download/snap-download/
+RUN curl -fSL "https://download.esa.int/step/snap/14.0/installers/esa-snap_sentinel_linux-14.0.0.sh" \
+        -o /tmp/snap_installer.sh \
+    && chmod +x /tmp/snap_installer.sh \
+    && /tmp/snap_installer.sh -q -dir /opt/snap \
+    && rm /tmp/snap_installer.sh \
+    && ln -sf /opt/snap/bin/gpt /usr/local/bin/gpt
+
+# ── Python dependencies ─────────────────────────────────────────────
+WORKDIR /app
+
+# Install PyTorch CPU-only first (avoids pulling ~2GB CUDA libraries)
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+COPY backend/requirements.txt /app/backend/requirements.txt
+# torch is already installed, skip it so pip doesn't re-download
+RUN grep -iv '^torch$' /app/backend/requirements.txt > /tmp/req_no_torch.txt \
+    && pip install --no-cache-dir -r /tmp/req_no_torch.txt \
+    && rm /tmp/req_no_torch.txt
+
+# ── Copy project source ─────────────────────────────────────────────
+COPY backend/        /app/backend/
+COPY pipeline.py     /app/pipeline.py
+COPY analysis.py     /app/analysis.py
+COPY report.py       /app/report.py
+COPY model.py        /app/model.py
+COPY train.py        /app/train.py
+COPY training_data.py /app/training_data.py
+COPY Dataset.py      /app/Dataset.py
+COPY checkpoints/    /app/checkpoints/
+
+# ── Create runs directory ────────────────────────────────────────────
+RUN mkdir -p /app/runs
+
+EXPOSE 8000
+
+CMD ["python", "-m", "uvicorn", "backend.api:app", "--host", "0.0.0.0", "--port", "8000"]

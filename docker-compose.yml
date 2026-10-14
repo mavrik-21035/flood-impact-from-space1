@@ -1,0 +1,39 @@
+services:
+  # ── Backend: FastAPI + Python + SNAP GPT ───────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: flood-backend
+    restart: unless-stopped
+    environment:
+      - CDSE_USERNAME=${CDSE_USERNAME:-}
+      - CDSE_PASSWORD=${CDSE_PASSWORD:-}
+    volumes:
+      - runs-data:/app/runs
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ── Frontend: Vite build → Nginx ───────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: flood-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  runs-data:

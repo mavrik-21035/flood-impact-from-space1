@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pydantic
+numpy
+rasterio
+pillow
+torch
+requests
+pyproj
+shapely
+scipy
+networkx
+fpdf2
+uharfbuzz
