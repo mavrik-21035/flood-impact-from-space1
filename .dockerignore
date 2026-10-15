@@ -1,0 +1,31 @@
+# ── Python ───────────────────────────────────────────────────────────
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# ── Node ─────────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+Frontend/node_modules/
+Frontend/dist/
+
+# ── Runs (output data) ──────────────────────────────────────────────
+runs/
+
+# ── IDE / OS ─────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Docker (avoid recursive context) ────────────────────────────────
+Dockerfile.*
+docker-compose.yml
+.dockerignore
+
+# ── Git ──────────────────────────────────────────────────────────────
+.git/
+.gitignore
